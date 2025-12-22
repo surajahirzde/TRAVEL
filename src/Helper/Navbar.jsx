@@ -1,69 +1,115 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import './styles/Navbar.css';
 
 const Navbar = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       console.log('Searching for:', searchQuery);
-      // Add your search logic here
+      // Add search logic here
     }
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'Schedules', path: '/schedules' },
+    { name: 'Book Ticket', path: '/booking' },
+    { name: 'Contact', path: '/contact' }
+  ];
+
   return (
-    <header className="nav-main-container">
-      <div className="nav-content-wrapper">
+    <header className="navbar-container">
+      <div className="navbar-wrapper">
         
-        {/* Logo Section */}
-        <div className="nav-logo-section">
-          <a href="/" className="nav-logo-link">
-            <div className="nav-logo-icon">⚓</div>
-            <div className="nav-logo-texts">
-              <span className="nav-logo-primary">Ferry</span>
-              <span className="nav-logo-secondary">Bookings</span>
+        {/* Logo and Brand Name */}
+        <div className="navbar-brand">
+          <Link to="/" className="navbar-logo-link">
+            <div className="navbar-logo-icon">🚢</div>
+            <div className="navbar-brand-text">
+              <span className="navbar-brand-primary">Travel</span>
+              <span className="navbar-brand-secondary">Ferry</span>
             </div>
-          </a>
-          <div className="nav-merchant-id">
-            <span className="nav-merchant-label">Merchant ID:</span>
-            <span className="nav-merchant-value">FB789456123</span>
+          </Link>
+        </div>
+
+        {/* Desktop Navigation Links */}
+        <nav className="navbar-desktop-nav">
+          <ul className="navbar-links-list">
+            {navLinks.map((link) => (
+              <li key={link.name} className="navbar-link-item">
+                <Link 
+                  to={link.path} 
+                  className="navbar-link"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {link.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Merchant Profile Section */}
+        <div className="navbar-profile-section">
+          <div className="navbar-merchant-info">
+            <span className="navbar-merchant-label">Merchant ID:</span>
+            <span className="navbar-merchant-id">MF789456123</span>
           </div>
-        </div>
+          
+          <button className="navbar-profile-button">
+            <div className="navbar-profile-avatar">
+              <span className="navbar-avatar-initials">MF</span>
+            </div>
+          </button>
 
-        {/* Search Box Section */}
-        <div className="nav-search-section">
-          <form className="nav-search-form" onSubmit={handleSearch}>
-            <div className="nav-search-input-wrapper">
-              <input
-                type="text"
-                className="nav-search-input"
-                placeholder="Search ferries, routes, or ports..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                aria-label="Search"
-              />
-              <button type="submit" className="nav-search-button" aria-label="Search">
-                <span className="nav-search-icon">🔍</span>
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* User Profile Section */}
-        <div className="nav-profile-section">
-          <button className="nav-profile-button" aria-label="User profile">
-            <div className="nav-profile-avatar">
-              <span className="nav-avatar-text">JD</span>
-            </div>
-            <div className="nav-profile-info">
-              <span className="nav-profile-name">John Doe</span>
-              <span className="nav-profile-role">Merchant Account</span>
-            </div>
-            <div className="nav-profile-dropdown">▼</div>
+          {/* Mobile Menu Button */}
+          <button 
+            className="navbar-mobile-menu-btn"
+            onClick={toggleMenu}
+            aria-label="Toggle menu"
+          >
+            <span className={`navbar-menu-icon ${isMenuOpen ? 'open' : ''}`}>
+              <span className="navbar-menu-line"></span>
+              <span className="navbar-menu-line"></span>
+              <span className="navbar-menu-line"></span>
+            </span>
           </button>
         </div>
 
+      </div>
+
+      {/* Mobile Menu */}
+      <div className={`navbar-mobile-menu ${isMenuOpen ? 'open' : ''}`}>
+        <div className="navbar-mobile-menu-header">
+          <div className="navbar-mobile-profile">
+            <div className="navbar-mobile-avatar">MF</div>
+            <div className="navbar-mobile-profile-info">
+              <span className="navbar-mobile-merchant">Merchant ID: MF789456123</span>
+            </div>
+          </div>
+        </div>
+        
+        <ul className="navbar-mobile-links">
+          {navLinks.map((link) => (
+            <li key={link.name} className="navbar-mobile-link-item">
+              <Link 
+                to={link.path} 
+                className="navbar-mobile-link"
+                onClick={toggleMenu}
+              >
+                {link.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     </header>
   );
