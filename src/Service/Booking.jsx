@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './styles/Booking.css';
 
 const Booking = () => {
-  // Step states
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -24,6 +25,7 @@ const Booking = () => {
   // Step 2: Ferry Selection
   const [selectedFerry, setSelectedFerry] = useState(null);
   const [selectedClass, setSelectedClass] = useState('');
+  const [showClasses, setShowClasses] = useState(false);
 
   // Step 3: Passenger Details
   const [passengerDetails, setPassengerDetails] = useState([
@@ -135,14 +137,12 @@ const Booking = () => {
     }
   ];
 
-  // Ferry classes
   const ferryClasses = [
     { id: 'economy', name: 'Silver Class', priceMultiplier: 1.0, features: ['Basic Seat', 'Water Bottle'] },
     { id: 'business', name: 'Premium Class', priceMultiplier: 1.5, features: ['Comfy Seat', 'Snacks', 'Priority Boarding'] },
     { id: 'first', name: 'Royal Class', priceMultiplier: 2.0, features: ['Luxury Seat', 'Gourmet Meal', 'Private Lounge', 'Spa Access'] }
   ];
 
-  // Seat layout (like PVR)
   const seatLayout = [
     ['A1', 'A2', '', 'A3', 'A4', 'A5', '', 'A6', 'A7'],
     ['B1', 'B2', '', 'B3', 'B4', 'B5', '', 'B6', 'B7'],
@@ -153,10 +153,8 @@ const Booking = () => {
     ['F1', 'F2', 'F3', '', 'F4', 'F5', 'F6', '', 'F7', 'F8']
   ];
 
-  // Booked seats (simulated)
   const bookedSeats = ['A1', 'B3', 'C5', 'D2', 'E7', 'F4'];
 
-  // Handle journey details change
   const handleJourneyChange = (e) => {
     const { name, value } = e.target;
     setJourneyDetails(prev => ({
@@ -175,13 +173,22 @@ const Booking = () => {
     }));
   };
 
-  // Handle ferry selection
   const handleFerrySelect = (ferry) => {
     setSelectedFerry(ferry);
     setSelectedClass('');
+    setShowClasses(true);
+    
+    // Scroll to classes section on mobile
+    if (window.innerWidth <= 768) {
+      setTimeout(() => {
+        document.querySelector('.booking-classes-section').scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }, 100);
+    }
   };
 
-  // Handle seat selection
   const handleSeatSelect = (seat) => {
     if (bookedSeats.includes(seat) || seat === '' || seat === 'WALK' || seat === 'WAY') return;
     
@@ -197,7 +204,6 @@ const Booking = () => {
     });
   };
 
-  // Handle passenger details change
   const handlePassengerDetailChange = (index, field, value) => {
     const updatedPassengers = [...passengerDetails];
     updatedPassengers[index] = {
@@ -207,7 +213,6 @@ const Booking = () => {
     setPassengerDetails(updatedPassengers);
   };
 
-  // Add more passenger forms
   const addPassenger = () => {
     const totalPassengers = journeyDetails.passengers.adults + journeyDetails.passengers.children;
     if (passengerDetails.length < totalPassengers) {
@@ -225,7 +230,6 @@ const Booking = () => {
     }
   };
 
-  // Handle contact details change
   const handleContactChange = (e) => {
     const { name, value } = e.target;
     setContactDetails(prev => ({
@@ -234,7 +238,6 @@ const Booking = () => {
     }));
   };
 
-  // Calculate total price
   const calculateTotal = () => {
     if (!selectedFerry || !selectedClass) return 0;
     
@@ -247,7 +250,6 @@ const Booking = () => {
     return basePrice * classMultiplier * totalPassengers;
   };
 
-  // Handle next step
   const handleNextStep = () => {
     if (currentStep === 1 && (!journeyDetails.fromPort || !journeyDetails.toPort || !journeyDetails.departureDate)) {
       alert('Please fill all journey details');
@@ -270,7 +272,6 @@ const Booking = () => {
     }
     
     if (currentStep === 4) {
-      // Validate passenger details
       for (let passenger of passengerDetails) {
         if (!passenger.fullName || !passenger.age || !passenger.gender) {
           alert('Please fill all passenger details');
@@ -287,18 +288,15 @@ const Booking = () => {
     setCurrentStep(prev => Math.min(prev + 1, 7));
   };
 
-  // Handle previous step
   const handlePrevStep = () => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  // Handle payment
   const handlePayment = () => {
     setPaymentSuccess(true);
     setCurrentStep(7);
   };
 
-  // Format date
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -310,16 +308,17 @@ const Booking = () => {
     });
   };
 
-  // Render current step
   const renderStep = () => {
     switch(currentStep) {
       case 1:
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Select Your Journey</h2>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 1 of 7</div>
+              <h2 className="booking-step-title">Select Your Journey</h2>
+            </div>
             
             <div className="booking-form-grid">
-              {/* Trip Type */}
               <div className="booking-form-group">
                 <label className="booking-form-label">Trip Type</label>
                 <div className="booking-trip-type">
@@ -340,7 +339,6 @@ const Booking = () => {
                 </div>
               </div>
 
-              {/* From Port */}
               <div className="booking-form-group">
                 <label className="booking-form-label">From Port</label>
                 <select 
@@ -356,7 +354,6 @@ const Booking = () => {
                 </select>
               </div>
 
-              {/* To Port */}
               <div className="booking-form-group">
                 <label className="booking-form-label">To Port</label>
                 <select 
@@ -375,7 +372,6 @@ const Booking = () => {
                 </select>
               </div>
 
-              {/* Departure Date */}
               <div className="booking-form-group">
                 <label className="booking-form-label">Departure Date</label>
                 <input
@@ -388,7 +384,6 @@ const Booking = () => {
                 />
               </div>
 
-              {/* Return Date (if round trip) */}
               {journeyDetails.tripType === 'round-trip' && (
                 <div className="booking-form-group">
                   <label className="booking-form-label">Return Date</label>
@@ -403,7 +398,6 @@ const Booking = () => {
                 </div>
               )}
 
-              {/* Passengers */}
               <div className="booking-form-group booking-passengers-group">
                 <label className="booking-form-label">Passengers</label>
                 <div className="booking-passenger-selector">
@@ -478,8 +472,11 @@ const Booking = () => {
       case 2:
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Select Your Ferry</h2>
-            <p className="booking-step-subtitle">Available ferries from {journeyDetails.fromPort} to {journeyDetails.toPort}</p>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 2 of 7</div>
+              <h2 className="booking-step-title">Select Your Ferry</h2>
+              <p className="booking-step-subtitle">Available ferries from {journeyDetails.fromPort} to {journeyDetails.toPort}</p>
+            </div>
             
             <div className="booking-ferries-grid">
               {ferryTypes.map(ferry => (
@@ -533,10 +530,18 @@ const Booking = () => {
               ))}
             </div>
             
-            {/* Ferry Classes */}
-            {selectedFerry && (
+            {selectedFerry && showClasses && (
               <div className="booking-classes-section">
-                <h3 className="booking-classes-title">Select Class</h3>
+                <div className="booking-classes-header">
+                  <h3 className="booking-classes-title">Select Class for {selectedFerry.name}</h3>
+                  <button 
+                    type="button" 
+                    className="booking-classes-close"
+                    onClick={() => setShowClasses(false)}
+                  >
+                    ×
+                  </button>
+                </div>
                 <div className="booking-classes-grid">
                   {ferryClasses.map(cls => (
                     <div 
@@ -544,10 +549,12 @@ const Booking = () => {
                       className={`booking-class-card ${selectedClass === cls.id ? 'class-selected' : ''}`}
                       onClick={() => setSelectedClass(cls.id)}
                     >
-                      <h4 className="booking-class-name">{cls.name}</h4>
-                      <div className="booking-class-price">
-                        ₹{Math.round(selectedFerry.price * cls.priceMultiplier)}
-                        <span className="booking-class-perperson">/person</span>
+                      <div className="booking-class-card-header">
+                        <h4 className="booking-class-name">{cls.name}</h4>
+                        <div className="booking-class-price">
+                          ₹{Math.round(selectedFerry.price * cls.priceMultiplier)}
+                          <span className="booking-class-perperson">/person</span>
+                        </div>
                       </div>
                       <ul className="booking-class-features">
                         {cls.features.map((feature, idx) => (
@@ -557,9 +564,42 @@ const Booking = () => {
                           </li>
                         ))}
                       </ul>
+                      {selectedClass === cls.id && (
+                        <div className="booking-class-selected-badge">Selected</div>
+                      )}
                     </div>
                   ))}
                 </div>
+                <div className="booking-classes-action">
+                  <button 
+                    type="button" 
+                    className="booking-classes-confirm"
+                    onClick={() => {
+                      setShowClasses(false);
+                      document.querySelector('.booking-step-container').scrollIntoView({ 
+                        behavior: 'smooth',
+                        block: 'start'
+                      });
+                    }}
+                  >
+                    Confirm Class Selection
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {selectedFerry && selectedClass && !showClasses && (
+              <div className="booking-selected-summary">
+                <div className="booking-selected-ferry">
+                  <strong>Selected:</strong> {selectedFerry.name} - {ferryClasses.find(c => c.id === selectedClass)?.name}
+                </div>
+                <button 
+                  type="button" 
+                  className="booking-change-class"
+                  onClick={() => setShowClasses(true)}
+                >
+                  Change Class
+                </button>
               </div>
             )}
           </div>
@@ -568,12 +608,14 @@ const Booking = () => {
       case 3:
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Select Your Seats</h2>
-            <p className="booking-step-subtitle">
-              Select {journeyDetails.passengers.adults + journeyDetails.passengers.children} seat(s) for {selectedFerry?.name}
-            </p>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 3 of 7</div>
+              <h2 className="booking-step-title">Select Your Seats</h2>
+              <p className="booking-step-subtitle">
+                Select {journeyDetails.passengers.adults + journeyDetails.passengers.children} seat(s) for {selectedFerry?.name}
+              </p>
+            </div>
             
-            {/* Seat Map */}
             <div className="booking-seat-container">
               <div className="booking-seat-screen">SCREEN THIS WAY</div>
               
@@ -627,10 +669,14 @@ const Booking = () => {
               </div>
             </div>
             
-            {/* Selected Seats Summary */}
             {selectedSeats.length > 0 && (
               <div className="booking-seats-summary">
-                <h4>Selected Seats: {selectedSeats.join(', ')}</h4>
+                <div className="booking-seats-selected">
+                  <strong>Selected Seats:</strong> {selectedSeats.join(', ')}
+                </div>
+                <div className="booking-seats-total">
+                  <strong>Total:</strong> {selectedSeats.length} of {journeyDetails.passengers.adults + journeyDetails.passengers.children} seats selected
+                </div>
               </div>
             )}
           </div>
@@ -639,29 +685,48 @@ const Booking = () => {
       case 4:
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Passenger Details</h2>
-            <p className="booking-step-subtitle">
-              Enter details for {journeyDetails.passengers.adults + journeyDetails.passengers.children} passenger(s)
-            </p>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 4 of 7</div>
+              <h2 className="booking-step-title">Passenger Details</h2>
+              <p className="booking-step-subtitle">
+                Enter details for {journeyDetails.passengers.adults + journeyDetails.passengers.children} passenger(s)
+              </p>
+            </div>
             
             {passengerDetails.map((passenger, index) => (
               <div key={passenger.id} className="booking-passenger-form">
-                <h3 className="booking-passenger-form-title">Passenger {index + 1}</h3>
+                <div className="booking-passenger-form-header">
+                  <h3 className="booking-passenger-form-title">Passenger {index + 1}</h3>
+                  {index > 0 && (
+                    <button 
+                      type="button" 
+                      className="booking-remove-passenger"
+                      onClick={() => {
+                        const updated = [...passengerDetails];
+                        updated.splice(index, 1);
+                        setPassengerDetails(updated);
+                      }}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
                 
                 <div className="booking-form-grid">
                   <div className="booking-form-group">
-                    <label className="booking-form-label">Full Name</label>
+                    <label className="booking-form-label">Full Name *</label>
                     <input
                       type="text"
                       value={passenger.fullName}
                       onChange={(e) => handlePassengerDetailChange(index, 'fullName', e.target.value)}
                       className="booking-form-input"
                       placeholder="Enter full name"
+                      required
                     />
                   </div>
                   
                   <div className="booking-form-group">
-                    <label className="booking-form-label">Age</label>
+                    <label className="booking-form-label">Age *</label>
                     <input
                       type="number"
                       value={passenger.age}
@@ -670,15 +735,17 @@ const Booking = () => {
                       placeholder="Enter age"
                       min="2"
                       max="100"
+                      required
                     />
                   </div>
                   
                   <div className="booking-form-group">
-                    <label className="booking-form-label">Gender</label>
+                    <label className="booking-form-label">Gender *</label>
                     <select
                       value={passenger.gender}
                       onChange={(e) => handlePassengerDetailChange(index, 'gender', e.target.value)}
                       className="booking-form-select"
+                      required
                     >
                       <option value="">Select gender</option>
                       <option value="male">Male</option>
@@ -726,11 +793,15 @@ const Booking = () => {
       case 5:
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Contact Details</h2>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 5 of 7</div>
+              <h2 className="booking-step-title">Contact Details</h2>
+              <p className="booking-step-subtitle">We'll send booking confirmation to these details</p>
+            </div>
             
             <div className="booking-form-grid">
               <div className="booking-form-group">
-                <label className="booking-form-label">Email Address</label>
+                <label className="booking-form-label">Email Address *</label>
                 <input
                   type="email"
                   name="email"
@@ -738,11 +809,12 @@ const Booking = () => {
                   onChange={handleContactChange}
                   className="booking-form-input"
                   placeholder="Enter email"
+                  required
                 />
               </div>
               
               <div className="booking-form-group">
-                <label className="booking-form-label">Phone Number</label>
+                <label className="booking-form-label">Phone Number *</label>
                 <input
                   type="tel"
                   name="phone"
@@ -750,6 +822,7 @@ const Booking = () => {
                   onChange={handleContactChange}
                   className="booking-form-input"
                   placeholder="Enter 10-digit mobile number"
+                  required
                 />
               </div>
               
@@ -785,10 +858,13 @@ const Booking = () => {
         
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Review & Payment</h2>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 6 of 7</div>
+              <h2 className="booking-step-title">Review Your Booking</h2>
+              <p className="booking-step-subtitle">Please review all details before payment</p>
+            </div>
             
             <div className="booking-review-container">
-              {/* Journey Summary */}
               <div className="booking-review-section">
                 <h3 className="booking-review-title">Journey Details</h3>
                 <div className="booking-review-content">
@@ -815,7 +891,6 @@ const Booking = () => {
                 </div>
               </div>
               
-              {/* Ferry Summary */}
               {selectedFerry && (
                 <div className="booking-review-section">
                   <h3 className="booking-review-title">Ferry Details</h3>
@@ -842,41 +917,6 @@ const Booking = () => {
                 </div>
               )}
               
-              {/* Passenger Summary */}
-              <div className="booking-review-section">
-                <h3 className="booking-review-title">Passenger Details</h3>
-                <div className="booking-review-content">
-                  {passengerDetails.map((passenger, index) => (
-                    <div key={index} className="booking-review-passenger">
-                      <div className="booking-review-row">
-                        <span className="booking-review-label">Passenger {index + 1}</span>
-                        <span className="booking-review-value">{passenger.fullName || 'Not filled'}</span>
-                      </div>
-                      <div className="booking-review-row">
-                        <span className="booking-review-label">Age & Gender</span>
-                        <span className="booking-review-value">{passenger.age} years, {passenger.gender}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Contact Summary */}
-              <div className="booking-review-section">
-                <h3 className="booking-review-title">Contact Details</h3>
-                <div className="booking-review-content">
-                  <div className="booking-review-row">
-                    <span className="booking-review-label">Email</span>
-                    <span className="booking-review-value">{contactDetails.email || 'Not filled'}</span>
-                  </div>
-                  <div className="booking-review-row">
-                    <span className="booking-review-label">Phone</span>
-                    <span className="booking-review-value">{contactDetails.phone || 'Not filled'}</span>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Price Summary */}
               <div className="booking-review-section booking-price-summary">
                 <h3 className="booking-review-title">Price Summary</h3>
                 <div className="booking-review-content">
@@ -900,29 +940,6 @@ const Booking = () => {
                     <span className="booking-review-value booking-total-amount">₹{total}</span>
                   </div>
                 </div>
-              </div>
-            </div>
-            
-            {/* Payment Options */}
-            <div className="booking-payment-options">
-              <h3 className="booking-payment-title">Select Payment Method</h3>
-              <div className="booking-payment-methods">
-                <button type="button" className="booking-payment-method">
-                  <span className="booking-payment-icon">💳</span>
-                  Credit/Debit Card
-                </button>
-                <button type="button" className="booking-payment-method">
-                  <span className="booking-payment-icon">🏦</span>
-                  Net Banking
-                </button>
-                <button type="button" className="booking-payment-method">
-                  <span className="booking-payment-icon">📱</span>
-                  UPI
-                </button>
-                <button type="button" className="booking-payment-method">
-                  <span className="booking-payment-icon">💰</span>
-                  Wallet
-                </button>
               </div>
             </div>
           </div>
@@ -977,6 +994,13 @@ const Booking = () => {
                   >
                     🖨️ Print Ticket
                   </button>
+                  <button 
+                    type="button" 
+                    className="booking-new-booking"
+                    onClick={() => navigate('/booking')}
+                  >
+                    🛳️ Book Another Ferry
+                  </button>
                 </div>
               </div>
             </div>
@@ -985,13 +1009,103 @@ const Booking = () => {
         
         return (
           <div className="booking-step-container">
-            <h2 className="booking-step-title">Complete Payment</h2>
-            <p className="booking-step-subtitle">Total Amount: ₹{calculateTotal()}</p>
+            <div className="booking-step-mobile-header">
+              <div className="booking-step-number">Step 7 of 7</div>
+              <h2 className="booking-step-title">Complete Payment</h2>
+              <p className="booking-step-subtitle">Secure payment gateway</p>
+            </div>
             
-            <div className="booking-payment-container">
-              <button type="button" onClick={handlePayment} className="booking-pay-now">
-                Confirm & Pay ₹{calculateTotal()}
-              </button>
+            <div className="booking-payment-section">
+              <div className="booking-payment-amount">
+                <div className="booking-payment-label">Total Amount to Pay</div>
+                <div className="booking-payment-total">₹{calculateTotal()}</div>
+              </div>
+              
+              <div className="booking-payment-methods-section">
+                <h3 className="booking-payment-title">Select Payment Method</h3>
+                <div className="booking-payment-methods">
+                  <div className="booking-payment-method">
+                    <input 
+                      type="radio" 
+                      id="card" 
+                      name="payment" 
+                      defaultChecked 
+                      className="booking-payment-radio"
+                    />
+                    <label htmlFor="card" className="booking-payment-method-label">
+                      <span className="booking-payment-icon">💳</span>
+                      <div className="booking-payment-method-info">
+                        <span className="booking-payment-method-name">Credit/Debit Card</span>
+                        <span className="booking-payment-method-desc">Pay using Visa, MasterCard, Rupay</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="booking-payment-method">
+                    <input 
+                      type="radio" 
+                      id="netbanking" 
+                      name="payment" 
+                      className="booking-payment-radio"
+                    />
+                    <label htmlFor="netbanking" className="booking-payment-method-label">
+                      <span className="booking-payment-icon">🏦</span>
+                      <div className="booking-payment-method-info">
+                        <span className="booking-payment-method-name">Net Banking</span>
+                        <span className="booking-payment-method-desc">All major Indian banks</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="booking-payment-method">
+                    <input 
+                      type="radio" 
+                      id="upi" 
+                      name="payment" 
+                      className="booking-payment-radio"
+                    />
+                    <label htmlFor="upi" className="booking-payment-method-label">
+                      <span className="booking-payment-icon">📱</span>
+                      <div className="booking-payment-method-info">
+                        <span className="booking-payment-method-name">UPI</span>
+                        <span className="booking-payment-method-desc">Google Pay, PhonePe, Paytm</span>
+                      </div>
+                    </label>
+                  </div>
+                  
+                  <div className="booking-payment-method">
+                    <input 
+                      type="radio" 
+                      id="wallet" 
+                      name="payment" 
+                      className="booking-payment-radio"
+                    />
+                    <label htmlFor="wallet" className="booking-payment-method-label">
+                      <span className="booking-payment-icon">💰</span>
+                      <div className="booking-payment-method-info">
+                        <span className="booking-payment-method-name">Wallet</span>
+                        <span className="booking-payment-method-desc">Paytm, Mobikwik, Amazon Pay</span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="booking-payment-security">
+                <div className="booking-payment-secure">
+                  <span className="booking-payment-lock">🔒</span>
+                  <span>Your payment is secured with 256-bit SSL encryption</span>
+                </div>
+              </div>
+              
+              <div className="booking-payment-action">
+                <button type="button" onClick={handlePayment} className="booking-pay-now">
+                  Pay ₹{calculateTotal()} & Confirm Booking
+                </button>
+                <p className="booking-payment-note">
+                  By clicking "Pay & Confirm", you agree to our Terms & Conditions and Privacy Policy
+                </p>
+              </div>
             </div>
           </div>
         );
@@ -1001,7 +1115,6 @@ const Booking = () => {
     }
   };
 
-  // Steps navigation
   const steps = [
     { number: 1, title: 'Journey', icon: '📍' },
     { number: 2, title: 'Ferry', icon: '🛳️' },
@@ -1019,7 +1132,6 @@ const Booking = () => {
         <p className="booking-main-subtitle">Easy booking in 7 simple steps</p>
       </div>
       
-      {/* Progress Steps */}
       <div className="booking-progress-container">
         <div className="booking-progress-steps">
           {steps.map(step => (
@@ -1043,22 +1155,20 @@ const Booking = () => {
         </div>
       </div>
       
-      {/* Current Step Content */}
       <div className="booking-content-container">
         {renderStep()}
       </div>
       
-      {/* Navigation Buttons */}
       {currentStep < 7 && !paymentSuccess && (
         <div className="booking-navigation">
           {currentStep > 1 && (
             <button type="button" onClick={handlePrevStep} className="booking-nav-btn booking-nav-prev">
-              ← Previous
+              ← Previous Step
             </button>
           )}
           
           <button type="button" onClick={handleNextStep} className="booking-nav-btn booking-nav-next">
-            {currentStep === 6 ? 'Proceed to Payment' : 'Next Step →'}
+            {currentStep === 6 ? 'Proceed to Payment →' : 'Next Step →'}
           </button>
         </div>
       )}
@@ -1067,15 +1177,14 @@ const Booking = () => {
         <div className="booking-success-navigation">
           <button 
             type="button" 
-            onClick={() => window.location.reload()}
+            onClick={() => navigate('/')}
             className="booking-nav-btn booking-nav-home"
           >
-            Book Another Ferry
+            ← Back to Home
           </button>
         </div>
       )}
       
-      {/* Summary Sidebar */}
       {currentStep < 7 && selectedFerry && (
         <div className="booking-sidebar">
           <div className="booking-sidebar-content">
@@ -1112,13 +1221,6 @@ const Booking = () => {
                 <p className="booking-sidebar-text">{selectedSeats.join(', ')}</p>
               </div>
             )}
-            
-            <div className="booking-sidebar-section">
-              <h4 className="booking-sidebar-section-title">Passengers</h4>
-              <p className="booking-sidebar-text">
-                {journeyDetails.passengers.adults + journeyDetails.passengers.children} Passengers
-              </p>
-            </div>
             
             <div className="booking-sidebar-section booking-sidebar-total">
               <h4 className="booking-sidebar-section-title">Total</h4>
