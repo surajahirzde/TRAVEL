@@ -1,12 +1,21 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './styles/Booking.css';
+import jsPDF from 'jspdf';
+import AmountForm from './payment';
 
 const Booking = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [bookingId, setBookingId] = useState('');
+  const [scrollToClasses, setScrollToClasses] = useState(false);
+  const [showMobileSteps, setShowMobileSteps] = useState(true);
+  
+  // Validation error states
+  const [validationErrors, setValidationErrors] = useState({});
+  const [fieldTouched, setFieldTouched] = useState({});
 
   // Step 1: Journey Details
   const [journeyDetails, setJourneyDetails] = useState({
@@ -25,7 +34,6 @@ const Booking = () => {
   // Step 2: Ferry Selection
   const [selectedFerry, setSelectedFerry] = useState(null);
   const [selectedClass, setSelectedClass] = useState('');
-  const [showClasses, setShowClasses] = useState(false);
 
   // Step 3: Passenger Details
   const [passengerDetails, setPassengerDetails] = useState([
@@ -61,8 +69,13 @@ const Booking = () => {
     'Murud-Janjira'
   ];
 
-  // Available ferry types
-  const ferryTypes = [
+  // Generate random price between 2000 to 5000
+  const generateRandomPrice = () => {
+    return Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000;
+  };
+
+  // Available ferry types with random prices
+  const [ferryTypes] = useState([
     {
       id: 1,
       name: 'SuperFast Express',
@@ -70,7 +83,7 @@ const Booking = () => {
       duration: '2h 15m',
       departure: '08:00 AM',
       arrival: '10:15 AM',
-      price: 1250,
+      price: generateRandomPrice(),
       amenities: ['WiFi', 'AC', 'Snacks', 'TV'],
       rating: 4.5,
       image: '🚤'
@@ -82,7 +95,7 @@ const Booking = () => {
       duration: '3h 30m',
       departure: '10:30 AM',
       arrival: '02:00 PM',
-      price: 1850,
+      price: generateRandomPrice(),
       amenities: ['Restaurant', 'Bar', 'Cabins', 'Spa'],
       rating: 4.8,
       image: '🛳️'
@@ -94,7 +107,7 @@ const Booking = () => {
       duration: '1h 45m',
       departure: '09:15 AM',
       arrival: '11:00 AM',
-      price: 950,
+      price: generateRandomPrice(),
       amenities: ['WiFi', 'Life Jackets', 'Water'],
       rating: 4.2,
       image: '⚡'
@@ -106,7 +119,7 @@ const Booking = () => {
       duration: '4h 00m',
       departure: '11:00 AM',
       arrival: '03:00 PM',
-      price: 2500,
+      price: generateRandomPrice(),
       amenities: ['Private Cabins', 'Gourmet Food', 'Sun Deck', 'Jacuzzi'],
       rating: 4.9,
       image: '🛥️'
@@ -118,7 +131,7 @@ const Booking = () => {
       duration: '5h 30m',
       departure: '07:00 AM',
       arrival: '12:30 PM',
-      price: 1650,
+      price: generateRandomPrice(),
       amenities: ['Guide', 'Lunch', 'Sightseeing'],
       rating: 4.4,
       image: '🏝️'
@@ -130,12 +143,12 @@ const Booking = () => {
       duration: '6h 00m',
       departure: '06:00 AM',
       arrival: '12:00 PM',
-      price: 2100,
+      price: generateRandomPrice(),
       amenities: ['Vehicle Transport', 'Cafeteria', 'Rest Area'],
       rating: 4.3,
       image: '🚛'
     }
-  ];
+  ]);
 
   const ferryClasses = [
     { id: 'economy', name: 'Silver Class', priceMultiplier: 1.0, features: ['Basic Seat', 'Water Bottle'] },
@@ -155,12 +168,222 @@ const Booking = () => {
 
   const bookedSeats = ['A1', 'B3', 'C5', 'D2', 'E7', 'F4'];
 
+  // Validation functions
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
+  const validatePhone = (phone) => {
+    const re = /^[6-9]\d{9}$/;
+    return re.test(phone);
+  };
+
+  const validateAadhar = (aadhar) => {
+    const re = /^\d{12}$/;
+    return re.test(aadhar);
+  };
+
+  const validatePassport = (passport) => {
+    const re = /^[A-PR-WY][1-9]\d\s?\d{4}[1-9]$/;
+    return re.test(passport);
+  };
+
+  const validateVoterID = (voterId) => {
+    const re = /^[A-Z]{3}[0-9]{7}$/;
+    return re.test(voterId);
+  };
+
+  const validateDrivingLicense = (dl) => {
+    const re = /^(([A-Z]{2}[0-9]{2})|([0-9]{2}[A-Z]{2}))((19|20)[0-9][0-9])[0-9]{7}$/;
+    return re.test(dl);
+  };
+
+  const validateID = (idType, idNumber) => {
+    if (!idNumber.trim()) return true; // ID is optional
+    
+    switch(idType) {
+      case 'aadhar':
+        return validateAadhar(idNumber);
+      case 'passport':
+        return validatePassport(idNumber);
+      case 'voter':
+        return validateVoterID(idNumber);
+      case 'driving':
+        return validateDrivingLicense(idNumber);
+      default:
+        return true;
+    }
+  };
+
+  const validateName = (name) => {
+    const re = /^[a-zA-Z\s]{2,50}$/;
+    return re.test(name);
+  };
+
+  const validateAge = (age) => {
+    return age >= 2 && age <= 100;
+  };
+
+  const validateStep1 = () => {
+    const errors = {};
+    
+    if (!journeyDetails.fromPort) {
+      errors.fromPort = 'Please select departure port';
+    }
+    
+    if (!journeyDetails.toPort) {
+      errors.toPort = 'Please select arrival port';
+    }
+    
+    if (journeyDetails.fromPort && journeyDetails.toPort && journeyDetails.fromPort === journeyDetails.toPort) {
+      errors.toPort = 'Departure and arrival ports cannot be same';
+    }
+    
+    if (!journeyDetails.departureDate) {
+      errors.departureDate = 'Please select departure date';
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(journeyDetails.departureDate);
+      if (selectedDate < today) {
+        errors.departureDate = 'Departure date cannot be in past';
+      }
+    }
+    
+    if (journeyDetails.tripType === 'round-trip' && !journeyDetails.returnDate) {
+      errors.returnDate = 'Please select return date';
+    } else if (journeyDetails.tripType === 'round-trip' && journeyDetails.departureDate && journeyDetails.returnDate) {
+      const departureDate = new Date(journeyDetails.departureDate);
+      const returnDate = new Date(journeyDetails.returnDate);
+      if (returnDate <= departureDate) {
+        errors.returnDate = 'Return date must be after departure date';
+      }
+    }
+    
+    return errors;
+  };
+
+  const validateStep4 = () => {
+    const errors = {};
+    
+    passengerDetails.forEach((passenger, index) => {
+      if (!validateName(passenger.fullName.trim())) {
+        errors[`passenger_${index}_name`] = 'Enter valid name (2-50 letters only)';
+      }
+      
+      if (!passenger.age) {
+        errors[`passenger_${index}_age`] = 'Age is required';
+      } else if (!validateAge(parseInt(passenger.age))) {
+        errors[`passenger_${index}_age`] = 'Age must be between 2 and 100';
+      }
+      
+      if (!passenger.gender) {
+        errors[`passenger_${index}_gender`] = 'Please select gender';
+      }
+      
+      if (passenger.idNumber && !validateID(passenger.idType, passenger.idNumber)) {
+        let errorMsg = 'Invalid ID number';
+        switch(passenger.idType) {
+          case 'aadhar':
+            errorMsg = 'Aadhar must be 12 digits';
+            break;
+          case 'passport':
+            errorMsg = 'Invalid passport format';
+            break;
+          case 'voter':
+            errorMsg = 'Invalid Voter ID format';
+            break;
+          case 'driving':
+            errorMsg = 'Invalid Driving License format';
+            break;
+        }
+        errors[`passenger_${index}_id`] = errorMsg;
+      }
+    });
+    
+    return errors;
+  };
+
+  const validateStep5 = () => {
+    const errors = {};
+    
+    if (!contactDetails.email) {
+      errors.email = 'Email is required';
+    } else if (!validateEmail(contactDetails.email)) {
+      errors.email = 'Please enter valid email address';
+    }
+    
+    if (!contactDetails.phone) {
+      errors.phone = 'Phone number is required';
+    } else if (!validatePhone(contactDetails.phone)) {
+      errors.phone = 'Please enter valid 10-digit phone number';
+    }
+    
+    if (contactDetails.emergencyContact && !validatePhone(contactDetails.emergencyContact)) {
+      errors.emergencyContact = 'Please enter valid 10-digit phone number';
+    }
+    
+    return errors;
+  };
+
+  // Step change hone par automatically scroll top pe
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+    
+    if (window.innerWidth > 768) {
+      const contentContainer = document.querySelector('.booking-content-container');
+      if (contentContainer) {
+        contentContainer.scrollTop = 0;
+      }
+    }
+  }, [currentStep]);
+
+  // Auto scroll to classes when ferry is selected
+  useEffect(() => {
+    if (scrollToClasses && selectedFerry && !selectedClass) {
+      const classesSection = document.getElementById('classesSection');
+      if (classesSection) {
+        setTimeout(() => {
+          classesSection.scrollIntoView({ 
+            behavior: 'smooth',
+            block: 'center'
+          });
+          setScrollToClasses(false);
+        }, 300);
+      }
+    }
+  }, [scrollToClasses, selectedFerry, selectedClass]);
+
+  // Check mobile view
+  useEffect(() => {
+    const checkMobile = () => {
+      setShowMobileSteps(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleJourneyChange = (e) => {
     const { name, value } = e.target;
     setJourneyDetails(prev => ({
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
   };
 
   const handlePassengerChange = (type, value) => {
@@ -176,17 +399,7 @@ const Booking = () => {
   const handleFerrySelect = (ferry) => {
     setSelectedFerry(ferry);
     setSelectedClass('');
-    setShowClasses(true);
-    
-    // Scroll to classes section on mobile
-    if (window.innerWidth <= 768) {
-      setTimeout(() => {
-        document.querySelector('.booking-classes-section').scrollIntoView({ 
-          behavior: 'smooth',
-          block: 'start'
-        });
-      }, 100);
-    }
+    setScrollToClasses(true);
   };
 
   const handleSeatSelect = (seat) => {
@@ -211,6 +424,15 @@ const Booking = () => {
       [field]: value
     };
     setPassengerDetails(updatedPassengers);
+    
+    // Clear validation error when user starts typing
+    const errorKey = `passenger_${index}_${field === 'fullName' ? 'name' : field === 'idNumber' ? 'id' : field}`;
+    if (validationErrors[errorKey]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [errorKey]: ''
+      }));
+    }
   };
 
   const addPassenger = () => {
@@ -236,6 +458,21 @@ const Booking = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const handleFieldBlur = (fieldName) => {
+    setFieldTouched(prev => ({
+      ...prev,
+      [fieldName]: true
+    }));
   };
 
   const calculateTotal = () => {
@@ -251,19 +488,26 @@ const Booking = () => {
   };
 
   const handleNextStep = () => {
-    if (currentStep === 1 && (!journeyDetails.fromPort || !journeyDetails.toPort || !journeyDetails.departureDate)) {
-      alert('Please fill all journey details');
-      return;
+    let errors = {};
+    
+    if (currentStep === 1) {
+      errors = validateStep1();
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
     }
     
-    if (currentStep === 2 && !selectedFerry) {
-      alert('Please select a ferry');
-      return;
-    }
-    
-    if (currentStep === 2 && !selectedClass) {
-      alert('Please select a class');
-      return;
+    if (currentStep === 2) {
+      if (!selectedFerry) {
+        alert('Please select a ferry');
+        return;
+      }
+      
+      if (!selectedClass) {
+        alert('Please select a class');
+        return;
+      }
     }
     
     if (currentStep === 3 && selectedSeats.length < (journeyDetails.passengers.adults + journeyDetails.passengers.children)) {
@@ -272,19 +516,22 @@ const Booking = () => {
     }
     
     if (currentStep === 4) {
-      for (let passenger of passengerDetails) {
-        if (!passenger.fullName || !passenger.age || !passenger.gender) {
-          alert('Please fill all passenger details');
-          return;
-        }
+      errors = validateStep4();
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
       }
     }
     
-    if (currentStep === 5 && (!contactDetails.email || !contactDetails.phone)) {
-      alert('Please fill contact details');
-      return;
+    if (currentStep === 5) {
+      errors = validateStep5();
+      if (Object.keys(errors).length > 0) {
+        setValidationErrors(errors);
+        return;
+      }
     }
     
+    setValidationErrors({});
     setCurrentStep(prev => Math.min(prev + 1, 7));
   };
 
@@ -293,6 +540,8 @@ const Booking = () => {
   };
 
   const handlePayment = () => {
+    const newBookingId = 'FB' + Date.now().toString().slice(-8);
+    setBookingId(newBookingId);
     setPaymentSuccess(true);
     setCurrentStep(7);
   };
@@ -306,6 +555,54 @@ const Booking = () => {
       month: 'long',
       day: 'numeric'
     });
+  };
+
+  const downloadReceipt = () => {
+    const doc = new jsPDF();
+    
+    doc.setFontSize(20);
+    doc.setTextColor(0, 119, 182);
+    doc.text('TravelFerry Booking Receipt', 105, 20, null, null, 'center');
+    
+    doc.setFontSize(12);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Booking ID: ${bookingId}`, 20, 40);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 48);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Booking Details:', 20, 65);
+    
+    doc.setFontSize(11);
+    doc.text(`Route: ${journeyDetails.fromPort} → ${journeyDetails.toPort}`, 20, 75);
+    doc.text(`Departure: ${formatDate(journeyDetails.departureDate)}`, 20, 83);
+    doc.text(`Ferry: ${selectedFerry?.name} (${selectedFerry?.type})`, 20, 91);
+    doc.text(`Class: ${ferryClasses.find(c => c.id === selectedClass)?.name}`, 20, 99);
+    doc.text(`Seats: ${selectedSeats.join(', ')}`, 20, 107);
+    doc.text(`Passengers: ${journeyDetails.passengers.adults + journeyDetails.passengers.children}`, 20, 115);
+    
+    doc.setFontSize(14);
+    doc.text('Payment Summary:', 20, 135);
+    
+    doc.setFontSize(11);
+    doc.text(`Base Fare: ₹${selectedFerry?.price} × ${journeyDetails.passengers.adults + journeyDetails.passengers.children}`, 20, 145);
+    if (selectedClass) {
+      const classObj = ferryClasses.find(c => c.id === selectedClass);
+      doc.text(`Class Multiplier: ${classObj?.priceMultiplier}x`, 20, 153);
+    }
+    
+    doc.setFontSize(16);
+    doc.setTextColor(0, 119, 182);
+    doc.text(`Total Paid: ₹${calculateTotal()}`, 20, 170);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Thank you for choosing TravelFerry!', 105, 280, null, null, 'center');
+    doc.text('For queries, contact: support@travelferry.com', 105, 285, null, null, 'center');
+    
+    doc.save(`TravelFerry_Receipt_${bookingId}.pdf`);
+    
+    alert('Receipt downloaded successfully!');
   };
 
   const renderStep = () => {
@@ -340,27 +637,32 @@ const Booking = () => {
               </div>
 
               <div className="booking-form-group">
-                <label className="booking-form-label">From Port</label>
+                <label className="booking-form-label">From Port *</label>
                 <select 
                   name="fromPort"
                   value={journeyDetails.fromPort}
                   onChange={handleJourneyChange}
-                  className="booking-form-select"
+                  onBlur={() => handleFieldBlur('fromPort')}
+                  className={`booking-form-select ${validationErrors.fromPort ? 'input-error' : ''}`}
                 >
                   <option value="">Select departure port</option>
                   {ports.map(port => (
                     <option key={port} value={port}>{port}</option>
                   ))}
                 </select>
+                {validationErrors.fromPort && (
+                  <div className="booking-error-message">{validationErrors.fromPort}</div>
+                )}
               </div>
 
               <div className="booking-form-group">
-                <label className="booking-form-label">To Port</label>
+                <label className="booking-form-label">To Port *</label>
                 <select 
                   name="toPort"
                   value={journeyDetails.toPort}
                   onChange={handleJourneyChange}
-                  className="booking-form-select"
+                  onBlur={() => handleFieldBlur('toPort')}
+                  className={`booking-form-select ${validationErrors.toPort ? 'input-error' : ''}`}
                 >
                   <option value="">Select arrival port</option>
                   {ports
@@ -370,31 +672,42 @@ const Booking = () => {
                     ))
                   }
                 </select>
+                {validationErrors.toPort && (
+                  <div className="booking-error-message">{validationErrors.toPort}</div>
+                )}
               </div>
 
               <div className="booking-form-group">
-                <label className="booking-form-label">Departure Date</label>
+                <label className="booking-form-label">Departure Date *</label>
                 <input
                   type="date"
                   name="departureDate"
                   value={journeyDetails.departureDate}
                   onChange={handleJourneyChange}
-                  className="booking-form-input"
+                  onBlur={() => handleFieldBlur('departureDate')}
+                  className={`booking-form-input ${validationErrors.departureDate ? 'input-error' : ''}`}
                   min={new Date().toISOString().split('T')[0]}
                 />
+                {validationErrors.departureDate && (
+                  <div className="booking-error-message">{validationErrors.departureDate}</div>
+                )}
               </div>
 
               {journeyDetails.tripType === 'round-trip' && (
                 <div className="booking-form-group">
-                  <label className="booking-form-label">Return Date</label>
+                  <label className="booking-form-label">Return Date *</label>
                   <input
                     type="date"
                     name="returnDate"
                     value={journeyDetails.returnDate}
                     onChange={handleJourneyChange}
-                    className="booking-form-input"
+                    onBlur={() => handleFieldBlur('returnDate')}
+                    className={`booking-form-input ${validationErrors.returnDate ? 'input-error' : ''}`}
                     min={journeyDetails.departureDate || new Date().toISOString().split('T')[0]}
                   />
+                  {validationErrors.returnDate && (
+                    <div className="booking-error-message">{validationErrors.returnDate}</div>
+                  )}
                 </div>
               )}
 
@@ -487,7 +800,7 @@ const Booking = () => {
                 >
                   <div className="booking-ferry-header">
                     <div className="booking-ferry-icon">{ferry.image}</div>
-                    <div className="booking-ferry-badge">SuperFast</div>
+                    <div className="booking-ferry-badge">Premium</div>
                   </div>
                   
                   <div className="booking-ferry-content">
@@ -530,17 +843,10 @@ const Booking = () => {
               ))}
             </div>
             
-            {selectedFerry && showClasses && (
-              <div className="booking-classes-section">
+            {selectedFerry && !selectedClass && (
+              <div className="booking-classes-section" id="classesSection">
                 <div className="booking-classes-header">
                   <h3 className="booking-classes-title">Select Class for {selectedFerry.name}</h3>
-                  <button 
-                    type="button" 
-                    className="booking-classes-close"
-                    onClick={() => setShowClasses(false)}
-                  >
-                    ×
-                  </button>
                 </div>
                 <div className="booking-classes-grid">
                   {ferryClasses.map(cls => (
@@ -570,25 +876,10 @@ const Booking = () => {
                     </div>
                   ))}
                 </div>
-                <div className="booking-classes-action">
-                  <button 
-                    type="button" 
-                    className="booking-classes-confirm"
-                    onClick={() => {
-                      setShowClasses(false);
-                      document.querySelector('.booking-step-container').scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'start'
-                      });
-                    }}
-                  >
-                    Confirm Class Selection
-                  </button>
-                </div>
               </div>
             )}
             
-            {selectedFerry && selectedClass && !showClasses && (
+            {selectedFerry && selectedClass && (
               <div className="booking-selected-summary">
                 <div className="booking-selected-ferry">
                   <strong>Selected:</strong> {selectedFerry.name} - {ferryClasses.find(c => c.id === selectedClass)?.name}
@@ -596,7 +887,7 @@ const Booking = () => {
                 <button 
                   type="button" 
                   className="booking-change-class"
-                  onClick={() => setShowClasses(true)}
+                  onClick={() => setSelectedClass('')}
                 >
                   Change Class
                 </button>
@@ -719,10 +1010,14 @@ const Booking = () => {
                       type="text"
                       value={passenger.fullName}
                       onChange={(e) => handlePassengerDetailChange(index, 'fullName', e.target.value)}
-                      className="booking-form-input"
+                      onBlur={() => handleFieldBlur(`passenger_${index}_name`)}
+                      className={`booking-form-input ${validationErrors[`passenger_${index}_name`] ? 'input-error' : ''}`}
                       placeholder="Enter full name"
                       required
                     />
+                    {validationErrors[`passenger_${index}_name`] && (
+                      <div className="booking-error-message">{validationErrors[`passenger_${index}_name`]}</div>
+                    )}
                   </div>
                   
                   <div className="booking-form-group">
@@ -731,12 +1026,16 @@ const Booking = () => {
                       type="number"
                       value={passenger.age}
                       onChange={(e) => handlePassengerDetailChange(index, 'age', e.target.value)}
-                      className="booking-form-input"
+                      onBlur={() => handleFieldBlur(`passenger_${index}_age`)}
+                      className={`booking-form-input ${validationErrors[`passenger_${index}_age`] ? 'input-error' : ''}`}
                       placeholder="Enter age"
                       min="2"
                       max="100"
                       required
                     />
+                    {validationErrors[`passenger_${index}_age`] && (
+                      <div className="booking-error-message">{validationErrors[`passenger_${index}_age`]}</div>
+                    )}
                   </div>
                   
                   <div className="booking-form-group">
@@ -744,7 +1043,8 @@ const Booking = () => {
                     <select
                       value={passenger.gender}
                       onChange={(e) => handlePassengerDetailChange(index, 'gender', e.target.value)}
-                      className="booking-form-select"
+                      onBlur={() => handleFieldBlur(`passenger_${index}_gender`)}
+                      className={`booking-form-select ${validationErrors[`passenger_${index}_gender`] ? 'input-error' : ''}`}
                       required
                     >
                       <option value="">Select gender</option>
@@ -752,6 +1052,9 @@ const Booking = () => {
                       <option value="female">Female</option>
                       <option value="other">Other</option>
                     </select>
+                    {validationErrors[`passenger_${index}_gender`] && (
+                      <div className="booking-error-message">{validationErrors[`passenger_${index}_gender`]}</div>
+                    )}
                   </div>
                   
                   <div className="booking-form-group">
@@ -769,14 +1072,32 @@ const Booking = () => {
                   </div>
                   
                   <div className="booking-form-group">
-                    <label className="booking-form-label">ID Number</label>
+                    <label className="booking-form-label">
+                      {passenger.idType === 'aadhar' ? 'Aadhar Number' : 
+                       passenger.idType === 'passport' ? 'Passport Number' :
+                       passenger.idType === 'voter' ? 'Voter ID' : 'Driving License'}
+                    </label>
                     <input
                       type="text"
                       value={passenger.idNumber}
                       onChange={(e) => handlePassengerDetailChange(index, 'idNumber', e.target.value)}
-                      className="booking-form-input"
-                      placeholder="Enter ID number"
+                      onBlur={() => handleFieldBlur(`passenger_${index}_id`)}
+                      className={`booking-form-input ${validationErrors[`passenger_${index}_id`] ? 'input-error' : ''}`}
+                      placeholder={
+                        passenger.idType === 'aadhar' ? 'Enter 12-digit Aadhar' :
+                        passenger.idType === 'passport' ? 'Enter passport number' :
+                        passenger.idType === 'voter' ? 'Enter Voter ID' : 'Enter Driving License'
+                      }
                     />
+                    {validationErrors[`passenger_${index}_id`] && (
+                      <div className="booking-error-message">{validationErrors[`passenger_${index}_id`]}</div>
+                    )}
+                    <div className="booking-input-hint">
+                      {passenger.idType === 'aadhar' ? 'Format: 12 digits' :
+                       passenger.idType === 'passport' ? 'Format: A12 3456' :
+                       passenger.idType === 'voter' ? 'Format: ABC1234567' :
+                       'Format: XX0000000000000'}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -807,10 +1128,14 @@ const Booking = () => {
                   name="email"
                   value={contactDetails.email}
                   onChange={handleContactChange}
-                  className="booking-form-input"
+                  onBlur={() => handleFieldBlur('email')}
+                  className={`booking-form-input ${validationErrors.email ? 'input-error' : ''}`}
                   placeholder="Enter email"
                   required
                 />
+                {validationErrors.email && (
+                  <div className="booking-error-message">{validationErrors.email}</div>
+                )}
               </div>
               
               <div className="booking-form-group">
@@ -820,10 +1145,16 @@ const Booking = () => {
                   name="phone"
                   value={contactDetails.phone}
                   onChange={handleContactChange}
-                  className="booking-form-input"
+                  onBlur={() => handleFieldBlur('phone')}
+                  className={`booking-form-input ${validationErrors.phone ? 'input-error' : ''}`}
                   placeholder="Enter 10-digit mobile number"
                   required
+                  maxLength="10"
                 />
+                {validationErrors.phone && (
+                  <div className="booking-error-message">{validationErrors.phone}</div>
+                )}
+                <div className="booking-input-hint">Format: 10 digits starting with 6,7,8,9</div>
               </div>
               
               <div className="booking-form-group">
@@ -833,9 +1164,14 @@ const Booking = () => {
                   name="emergencyContact"
                   value={contactDetails.emergencyContact}
                   onChange={handleContactChange}
-                  className="booking-form-input"
+                  onBlur={() => handleFieldBlur('emergencyContact')}
+                  className={`booking-form-input ${validationErrors.emergencyContact ? 'input-error' : ''}`}
                   placeholder="Emergency contact number"
+                  maxLength="10"
                 />
+                {validationErrors.emergencyContact && (
+                  <div className="booking-error-message">{validationErrors.emergencyContact}</div>
+                )}
               </div>
               
               <div className="booking-form-group booking-full-width">
@@ -847,15 +1183,15 @@ const Booking = () => {
                   className="booking-form-textarea"
                   placeholder="Any special requirements or requests..."
                   rows="3"
+                  maxLength="200"
                 />
+                <div className="booking-input-hint">Maximum 200 characters</div>
               </div>
             </div>
           </div>
         );
 
       case 6:
-        const total = calculateTotal();
-        
         return (
           <div className="booking-step-container">
             <div className="booking-step-mobile-header">
@@ -906,7 +1242,7 @@ const Booking = () => {
                     <div className="booking-review-row">
                       <span className="booking-review-label">Class</span>
                       <span className="booking-review-value">
-                        {ferryClasses.find(c => c.id === selectedClass)?.name || 'Not selected'}
+                        {ferryClasses.find(c => c.id === selectedClass)?.name}
                       </span>
                     </div>
                     <div className="booking-review-row">
@@ -937,7 +1273,7 @@ const Booking = () => {
                   <div className="booking-review-divider"></div>
                   <div className="booking-review-row booking-total-row">
                     <span className="booking-review-label">Total Amount</span>
-                    <span className="booking-review-value booking-total-amount">₹{total}</span>
+                    <span className="booking-review-value booking-total-amount">₹{calculateTotal()}</span>
                   </div>
                 </div>
               </div>
@@ -947,64 +1283,7 @@ const Booking = () => {
 
       case 7:
         if (paymentSuccess) {
-          return (
-            <div className="booking-step-container">
-              <div className="booking-success-container">
-                <div className="booking-success-icon">🎉</div>
-                <h2 className="booking-success-title">Booking Successful!</h2>
-                <p className="booking-success-message">
-                  Your ferry booking has been confirmed. Booking details have been sent to {contactDetails.email}
-                </p>
-                
-                <div className="booking-confirmation-details">
-                  <div className="booking-confirmation-row">
-                    <span>Booking ID:</span>
-                    <strong>FB{Date.now().toString().slice(-8)}</strong>
-                  </div>
-                  <div className="booking-confirmation-row">
-                    <span>Ferry:</span>
-                    <span>{selectedFerry?.name}</span>
-                  </div>
-                  <div className="booking-confirmation-row">
-                    <span>Departure:</span>
-                    <span>{formatDate(journeyDetails.departureDate)} at {selectedFerry?.departure}</span>
-                  </div>
-                  <div className="booking-confirmation-row">
-                    <span>Seats:</span>
-                    <span>{selectedSeats.join(', ')}</span>
-                  </div>
-                  <div className="booking-confirmation-row">
-                    <span>Total Paid:</span>
-                    <strong>₹{calculateTotal()}</strong>
-                  </div>
-                </div>
-                
-                <div className="booking-success-actions">
-                  <button 
-                    type="button" 
-                    className="booking-download-receipt"
-                    onClick={() => alert('Receipt downloaded!')}
-                  >
-                    📥 Download Receipt
-                  </button>
-                  <button 
-                    type="button" 
-                    className="booking-print-ticket"
-                    onClick={() => window.print()}
-                  >
-                    🖨️ Print Ticket
-                  </button>
-                  <button 
-                    type="button" 
-                    className="booking-new-booking"
-                    onClick={() => navigate('/booking')}
-                  >
-                    🛳️ Book Another Ferry
-                  </button>
-                </div>
-              </div>
-            </div>
-          );
+          return <AmountForm amount={calculateTotal()} />;
         }
         
         return (
@@ -1019,83 +1298,6 @@ const Booking = () => {
               <div className="booking-payment-amount">
                 <div className="booking-payment-label">Total Amount to Pay</div>
                 <div className="booking-payment-total">₹{calculateTotal()}</div>
-              </div>
-              
-              <div className="booking-payment-methods-section">
-                <h3 className="booking-payment-title">Select Payment Method</h3>
-                <div className="booking-payment-methods">
-                  <div className="booking-payment-method">
-                    <input 
-                      type="radio" 
-                      id="card" 
-                      name="payment" 
-                      defaultChecked 
-                      className="booking-payment-radio"
-                    />
-                    <label htmlFor="card" className="booking-payment-method-label">
-                      <span className="booking-payment-icon">💳</span>
-                      <div className="booking-payment-method-info">
-                        <span className="booking-payment-method-name">Credit/Debit Card</span>
-                        <span className="booking-payment-method-desc">Pay using Visa, MasterCard, Rupay</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div className="booking-payment-method">
-                    <input 
-                      type="radio" 
-                      id="netbanking" 
-                      name="payment" 
-                      className="booking-payment-radio"
-                    />
-                    <label htmlFor="netbanking" className="booking-payment-method-label">
-                      <span className="booking-payment-icon">🏦</span>
-                      <div className="booking-payment-method-info">
-                        <span className="booking-payment-method-name">Net Banking</span>
-                        <span className="booking-payment-method-desc">All major Indian banks</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div className="booking-payment-method">
-                    <input 
-                      type="radio" 
-                      id="upi" 
-                      name="payment" 
-                      className="booking-payment-radio"
-                    />
-                    <label htmlFor="upi" className="booking-payment-method-label">
-                      <span className="booking-payment-icon">📱</span>
-                      <div className="booking-payment-method-info">
-                        <span className="booking-payment-method-name">UPI</span>
-                        <span className="booking-payment-method-desc">Google Pay, PhonePe, Paytm</span>
-                      </div>
-                    </label>
-                  </div>
-                  
-                  <div className="booking-payment-method">
-                    <input 
-                      type="radio" 
-                      id="wallet" 
-                      name="payment" 
-                      className="booking-payment-radio"
-                    />
-                    <label htmlFor="wallet" className="booking-payment-method-label">
-                      <span className="booking-payment-icon">💰</span>
-                      <div className="booking-payment-method-info">
-                        <span className="booking-payment-method-name">Wallet</span>
-                        <span className="booking-payment-method-desc">Paytm, Mobikwik, Amazon Pay</span>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="booking-payment-security">
-                <div className="booking-payment-secure">
-                  <span className="booking-payment-lock">🔒</span>
-                  <span>Your payment is secured with 256-bit SSL encryption</span>
-                </div>
               </div>
               
               <div className="booking-payment-action">
@@ -1132,103 +1334,105 @@ const Booking = () => {
         <p className="booking-main-subtitle">Easy booking in 7 simple steps</p>
       </div>
       
-      <div className="booking-progress-container">
-        <div className="booking-progress-steps">
-          {steps.map(step => (
-            <div 
-              key={step.number}
-              className={`booking-progress-step ${currentStep >= step.number ? 'step-active' : ''} ${currentStep === step.number ? 'step-current' : ''}`}
-            >
-              <div className="booking-step-icon">{step.icon}</div>
-              <div className="booking-step-info">
-                <span className="booking-step-number">Step {step.number}</span>
-                <span className="booking-step-name">{step.title}</span>
+      {showMobileSteps && (
+        <div className="booking-progress-container">
+          <div className="booking-progress-steps">
+            {steps.map(step => (
+              <div 
+                key={step.number}
+                className={`booking-progress-step ${currentStep >= step.number ? 'step-active' : ''} ${currentStep === step.number ? 'step-current' : ''}`}
+              >
+                <div className="booking-step-icon">{step.icon}</div>
+                <div className="booking-step-info">
+                  <span className="booking-step-number">Step {step.number}</span>
+                  <span className="booking-step-name">{step.title}</span>
+                </div>
               </div>
+            ))}
+          </div>
+          <div className="booking-progress-bar">
+            <div 
+              className="booking-progress-fill" 
+              style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
+      
+      <div className="booking-content-wrapper">
+        <div className="booking-content-container">
+          {renderStep()}
+          
+          {currentStep < 7 && !paymentSuccess && (
+            <div className="booking-navigation">
+              {currentStep > 1 && (
+                <button type="button" onClick={handlePrevStep} className="booking-nav-btn booking-nav-prev">
+                  ← Previous Step
+                </button>
+              )}
+              
+              <button type="button" onClick={handleNextStep} className="booking-nav-btn booking-nav-next">
+                {currentStep === 6 ? 'Proceed to Payment →' : 'Next Step →'}
+              </button>
             </div>
-          ))}
-        </div>
-        <div className="booking-progress-bar">
-          <div 
-            className="booking-progress-fill" 
-            style={{ width: `${((currentStep - 1) / (steps.length - 1)) * 100}%` }}
-          ></div>
-        </div>
-      </div>
-      
-      <div className="booking-content-container">
-        {renderStep()}
-      </div>
-      
-      {currentStep < 7 && !paymentSuccess && (
-        <div className="booking-navigation">
-          {currentStep > 1 && (
-            <button type="button" onClick={handlePrevStep} className="booking-nav-btn booking-nav-prev">
-              ← Previous Step
-            </button>
           )}
           
-          <button type="button" onClick={handleNextStep} className="booking-nav-btn booking-nav-next">
-            {currentStep === 6 ? 'Proceed to Payment →' : 'Next Step →'}
-          </button>
-        </div>
-      )}
-      
-      {currentStep === 7 && paymentSuccess && (
-        <div className="booking-success-navigation">
-          <button 
-            type="button" 
-            onClick={() => navigate('/')}
-            className="booking-nav-btn booking-nav-home"
-          >
-            ← Back to Home
-          </button>
-        </div>
-      )}
-      
-      {currentStep < 7 && selectedFerry && (
-        <div className="booking-sidebar">
-          <div className="booking-sidebar-content">
-            <h3 className="booking-sidebar-title">Booking Summary</h3>
-            
-            <div className="booking-sidebar-section">
-              <h4 className="booking-sidebar-section-title">Journey</h4>
-              <p className="booking-sidebar-text">
-                {journeyDetails.fromPort} → {journeyDetails.toPort}
-              </p>
-              <p className="booking-sidebar-text">
-                {formatDate(journeyDetails.departureDate)}
-              </p>
+          {currentStep === 7 && paymentSuccess && (
+            <div className="booking-success-navigation">
+              <button 
+                type="button" 
+                onClick={() => navigate('/')}
+                className="booking-nav-btn booking-nav-home"
+              >
+                ← Back to Home
+              </button>
             </div>
-            
-            {selectedFerry && (
+          )}
+        </div>
+        
+        {currentStep < 7 && selectedFerry && (
+          <div className="booking-sidebar">
+            <div className="booking-sidebar-content">
+              <h3 className="booking-sidebar-title">Quick Summary</h3>
+              
+              <div className="booking-sidebar-section">
+                <h4 className="booking-sidebar-section-title">Journey</h4>
+                <p className="booking-sidebar-text">
+                  {journeyDetails.fromPort} → {journeyDetails.toPort}
+                </p>
+                <p className="booking-sidebar-text booking-sidebar-date">
+                  {formatDate(journeyDetails.departureDate)}
+                </p>
+              </div>
+              
               <div className="booking-sidebar-section">
                 <h4 className="booking-sidebar-section-title">Ferry</h4>
-                <p className="booking-sidebar-text">{selectedFerry.name}</p>
-                <p className="booking-sidebar-text">
+                <p className="booking-sidebar-text booking-sidebar-ferry">{selectedFerry.name}</p>
+                <p className="booking-sidebar-text booking-sidebar-time">
                   {selectedFerry.departure} - {selectedFerry.arrival}
                 </p>
                 {selectedClass && (
-                  <p className="booking-sidebar-text">
+                  <p className="booking-sidebar-text booking-sidebar-class">
                     Class: {ferryClasses.find(c => c.id === selectedClass)?.name}
                   </p>
                 )}
               </div>
-            )}
-            
-            {selectedSeats.length > 0 && (
-              <div className="booking-sidebar-section">
-                <h4 className="booking-sidebar-section-title">Seats</h4>
-                <p className="booking-sidebar-text">{selectedSeats.join(', ')}</p>
+              
+              {selectedSeats.length > 0 && (
+                <div className="booking-sidebar-section">
+                  <h4 className="booking-sidebar-section-title">Seats</h4>
+                  <p className="booking-sidebar-text booking-sidebar-seats">{selectedSeats.join(', ')}</p>
+                </div>
+              )}
+              
+              <div className="booking-sidebar-section booking-sidebar-total">
+                <h4 className="booking-sidebar-section-title">Total</h4>
+                <p className="booking-sidebar-total-amount">₹{calculateTotal()}</p>
               </div>
-            )}
-            
-            <div className="booking-sidebar-section booking-sidebar-total">
-              <h4 className="booking-sidebar-section-title">Total</h4>
-              <p className="booking-sidebar-total-amount">₹{calculateTotal()}</p>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
