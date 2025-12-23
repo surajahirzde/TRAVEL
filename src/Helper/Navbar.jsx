@@ -20,9 +20,10 @@ const Navbar = () => {
 
   const navLinks = [
     { name: 'Home', path: '/' },
-    { name: 'Schedules', path: '/schedules' },
+  
     { name: 'Book Ticket', path: '/booking' },
     { name: 'Contact', path: '/contact' }
+
   ];
 
   return (
@@ -60,8 +61,8 @@ const Navbar = () => {
         {/* Merchant Profile Section */}
         <div className="navbar-profile-section">
           <div className="navbar-merchant-info">
-            <span className="navbar-merchant-label">Merchant ID:</span>
-            <span className="navbar-merchant-id">MF789456123</span>
+            <span className="navbar-merchant-label">LOGIN ID:</span>
+            <span className="navbar-merchant-id">YOUR NUMBER </span>
           </div>
           
           <button className="navbar-profile-button">

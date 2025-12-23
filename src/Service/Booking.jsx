@@ -69,9 +69,9 @@ const Booking = () => {
     'Murud-Janjira'
   ];
 
-  // Generate random price between 2000 to 5000
+  // Generate random price between 2000 to 20000
   const generateRandomPrice = () => {
-    return Math.floor(Math.random() * (5000 - 2000 + 1)) + 2000;
+    return Math.floor(Math.random() * (20000 - 2000 + 1)) + 2000;
   };
 
   // Available ferry types with random prices
@@ -475,6 +475,7 @@ const Booking = () => {
     }));
   };
 
+  // Calculate base total without GST
   const calculateTotal = () => {
     if (!selectedFerry || !selectedClass) return 0;
     
@@ -485,6 +486,19 @@ const Booking = () => {
     const totalPassengers = journeyDetails.passengers.adults + journeyDetails.passengers.children;
     
     return basePrice * classMultiplier * totalPassengers;
+  };
+
+  // Calculate total with 18% GST
+  const calculateTotalWithGST = () => {
+    const baseTotal = calculateTotal();
+    const gstAmount = baseTotal * 0.18; // 18% GST
+    return baseTotal + gstAmount;
+  };
+
+  // Calculate GST amount separately
+  const calculateGSTAmount = () => {
+    const baseTotal = calculateTotal();
+    return baseTotal * 0.18;
   };
 
   const handleNextStep = () => {
@@ -585,15 +599,17 @@ const Booking = () => {
     doc.text('Payment Summary:', 20, 135);
     
     doc.setFontSize(11);
+    const baseTotal = calculateTotal();
+    const gstAmount = calculateGSTAmount();
+    const finalTotal = calculateTotalWithGST();
+    
     doc.text(`Base Fare: ₹${selectedFerry?.price} × ${journeyDetails.passengers.adults + journeyDetails.passengers.children}`, 20, 145);
-    if (selectedClass) {
-      const classObj = ferryClasses.find(c => c.id === selectedClass);
-      doc.text(`Class Multiplier: ${classObj?.priceMultiplier}x`, 20, 153);
-    }
+    doc.text(`Subtotal: ₹${baseTotal}`, 20, 153);
+    doc.text(`GST (18%): ₹${gstAmount.toFixed(2)}`, 20, 161);
     
     doc.setFontSize(16);
     doc.setTextColor(0, 119, 182);
-    doc.text(`Total Paid: ₹${calculateTotal()}`, 20, 170);
+    doc.text(`Total Paid: ₹${finalTotal.toFixed(2)}`, 20, 175);
     
     doc.setFontSize(10);
     doc.setTextColor(150, 150, 150);
@@ -1192,6 +1208,10 @@ const Booking = () => {
         );
 
       case 6:
+        const baseTotal = calculateTotal();
+        const gstAmount = calculateGSTAmount();
+        const finalTotal = calculateTotalWithGST();
+        
         return (
           <div className="booking-step-container">
             <div className="booking-step-mobile-header">
@@ -1270,10 +1290,18 @@ const Booking = () => {
                       </span>
                     </div>
                   )}
+                  <div className="booking-review-row">
+                    <span className="booking-review-label">Subtotal</span>
+                    <span className="booking-review-value">₹{baseTotal}</span>
+                  </div>
+                  <div className="booking-review-row">
+                    <span className="booking-review-label">GST (18%)</span>
+                    <span className="booking-review-value">₹{gstAmount.toFixed(2)}</span>
+                  </div>
                   <div className="booking-review-divider"></div>
                   <div className="booking-review-row booking-total-row">
                     <span className="booking-review-label">Total Amount</span>
-                    <span className="booking-review-value booking-total-amount">₹{calculateTotal()}</span>
+                    <span className="booking-review-value booking-total-amount">₹{finalTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -1283,8 +1311,10 @@ const Booking = () => {
 
       case 7:
         if (paymentSuccess) {
-          return <AmountForm amount={calculateTotal()} />;
+          return <AmountForm amount={calculateTotalWithGST()} />;
         }
+        
+        const finalTotalPayment = calculateTotalWithGST();
         
         return (
           <div className="booking-step-container">
@@ -1297,12 +1327,13 @@ const Booking = () => {
             <div className="booking-payment-section">
               <div className="booking-payment-amount">
                 <div className="booking-payment-label">Total Amount to Pay</div>
-                <div className="booking-payment-total">₹{calculateTotal()}</div>
+                <div className="booking-payment-total">₹{finalTotalPayment.toFixed(2)}</div>
+                <div className="booking-payment-gst-note">(Includes 18% GST)</div>
               </div>
               
               <div className="booking-payment-action">
                 <button type="button" onClick={handlePayment} className="booking-pay-now">
-                  Pay ₹{calculateTotal()} & Confirm Booking
+                  Pay ₹{finalTotalPayment.toFixed(2)} & Confirm Booking
                 </button>
                 <p className="booking-payment-note">
                   By clicking "Pay & Confirm", you agree to our Terms & Conditions and Privacy Policy
@@ -1427,7 +1458,8 @@ const Booking = () => {
               
               <div className="booking-sidebar-section booking-sidebar-total">
                 <h4 className="booking-sidebar-section-title">Total</h4>
-                <p className="booking-sidebar-total-amount">₹{calculateTotal()}</p>
+                <p className="booking-sidebar-total-amount">₹{calculateTotalWithGST().toFixed(2)}</p>
+                <p className="booking-sidebar-gst-note">(Includes 18% GST)</p>
               </div>
             </div>
           </div>

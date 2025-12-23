@@ -2177,4 +2177,35 @@
   background-color: rgba(220, 53, 69, 0.1);
   border-color: #dc3545;
   color: #dc3545;
+}/* Add these to your Booking.css file */
+
+.booking-payment-gst-note {
+  font-size: 14px;
+  color: #6c757d;
+  text-align: center;
+  margin-top: 5px;
+}
+
+.booking-sidebar-gst-note {
+  font-size: 12px;
+  color: #6c757d;
+  margin-top: 2px;
+}
+
+.booking-review-row .booking-review-value {
+  text-align: right;
+}
+
+.booking-total-amount {
+  font-size: 24px;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.booking-payment-total {
+  font-size: 32px;
+  font-weight: bold;
+  color: #28a745;
+  text-align: center;
+  margin: 10px 0;
 }
