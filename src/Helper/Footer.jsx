@@ -45,33 +45,10 @@ const Footer = () => {
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div className="footer-section">
-            <h4 className="footer-heading">Quick Links</h4>
-            <ul className="footer-links">
-              <li><Link to="/">🏠 Home</Link></li>
-              <li><Link to="/book-ticket">🎫 Book Ticket</Link></li>
-              <li><Link to="/routes">🗺️ Ferry Routes</Link></li>
-              <li><Link to="/schedules">⏰ Schedules</Link></li>
-              <li><Link to="/ferries">🛳️ Our Ferries</Link></li>
-              <li><Link to="/offers">🎁 Special Offers</Link></li>
-            </ul>
-          </div>
 
-          {/* Services */}
-          <div className="footer-section">
-            <h4 className="footer-heading">Our Services</h4>
-            <ul className="footer-links">
-              <li><span>🚤 Catamaran Ferries</span></li>
-              <li><span>🛳️ Cruise Ferries</span></li>
-              <li><span>⚡ Speed Boats</span></li>
-              <li><span>🛥️ Luxury Yachts</span></li>
-              <li><span>🏝️ Island Hopping</span></li>
-              <li><span>🚛 Vehicle Ferries</span></li>
-            </ul>
-          </div>
 
-          {/* Popular Routes */}
+
+  
         
         </div>
 
