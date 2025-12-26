@@ -43,7 +43,8 @@ const Booking = () => {
       age: '',
       gender: '',
       idType: 'aadhar',
-      idNumber: ''
+      idNumber: '',
+      maxLength: 12
     }
   ]);
 
@@ -76,79 +77,151 @@ const Booking = () => {
 
   // Available ferry types with random prices
   const [ferryTypes] = useState([
-    {
-      id: 1,
-      name: 'SuperFast Express',
-      type: 'Catamaran',
-      duration: '2h 15m',
-      departure: '08:00 AM',
-      arrival: '10:15 AM',
-      price: generateRandomPrice(),
-      amenities: ['WiFi', 'AC', 'Snacks', 'TV'],
-      rating: 4.5,
-      image: '🚤'
-    },
-    {
-      id: 2,
-      name: 'Ocean Monarch',
-      type: 'Cruise Ferry',
-      duration: '3h 30m',
-      departure: '10:30 AM',
-      arrival: '02:00 PM',
-      price: generateRandomPrice(),
-      amenities: ['Restaurant', 'Bar', 'Cabins', 'Spa'],
-      rating: 4.8,
-      image: '🛳️'
-    },
-    {
-      id: 3,
-      name: 'Sea Hawk',
-      type: 'Speed Boat',
-      duration: '1h 45m',
-      departure: '09:15 AM',
-      arrival: '11:00 AM',
-      price: generateRandomPrice(),
-      amenities: ['WiFi', 'Life Jackets', 'Water'],
-      rating: 4.2,
-      image: '⚡'
-    },
-    {
-      id: 4,
-      name: 'Royal Waves',
-      type: 'Luxury Yacht',
-      duration: '4h 00m',
-      departure: '11:00 AM',
-      arrival: '03:00 PM',
-      price: generateRandomPrice(),
-      amenities: ['Private Cabins', 'Gourmet Food', 'Sun Deck', 'Jacuzzi'],
-      rating: 4.9,
-      image: '🛥️'
-    },
-    {
-      id: 5,
-      name: 'Island Hopper',
-      type: 'Tourist Ferry',
-      duration: '5h 30m',
-      departure: '07:00 AM',
-      arrival: '12:30 PM',
-      price: generateRandomPrice(),
-      amenities: ['Guide', 'Lunch', 'Sightseeing'],
-      rating: 4.4,
-      image: '🏝️'
-    },
-    {
-      id: 6,
-      name: 'Cargo Express',
-      type: 'Vehicle Ferry',
-      duration: '6h 00m',
-      departure: '06:00 AM',
-      arrival: '12:00 PM',
-      price: generateRandomPrice(),
-      amenities: ['Vehicle Transport', 'Cafeteria', 'Rest Area'],
-      rating: 4.3,
-      image: '🚛'
-    }
-  ]);
+  {
+    id: 1,
+    name: 'SeaJet',
+    type: 'Catamaran',
+    duration: '2h 15m',
+    departure: '08:00 AM',
+    arrival: '10:15 AM',
+    price: generateRandomPrice(),
+    amenities: ['WiFi', 'AC', 'Snacks', 'TV'],
+    rating: 4.5,
+    image: '🚤'
+  },
+  {
+    id: 2,
+    name: 'Viking Line',
+    type: 'Cruise Ferry',
+    duration: '3h 30m',
+    departure: '10:30 AM',
+    arrival: '02:00 PM',
+    price: generateRandomPrice(),
+    amenities: ['Restaurant', 'Bar', 'Cabins', 'Spa'],
+    rating: 4.8,
+    image: '🛳️'
+  },
+  {
+    id: 3,
+    name: 'Blue Star',
+    type: 'Ferry',
+    duration: '4h 00m',
+    departure: '09:00 AM',
+    arrival: '01:00 PM',
+    price: generateRandomPrice(),
+    amenities: ['Cafeteria', 'Seating Lounge', 'Outdoor Deck'],
+    rating: 4.3,
+    image: '⛴️'
+  },
+  {
+    id: 4,
+    name: 'Fast Ferries',
+    type: 'High-Speed Ferry',
+    duration: '1h 45m',
+    departure: '09:15 AM',
+    arrival: '11:00 AM',
+    price: generateRandomPrice(),
+    amenities: ['WiFi', 'AC', 'Refreshments'],
+    rating: 4.2,
+    image: '⛵'
+  },
+  {
+    id: 5,
+    name: 'Tallink Silja',
+    type: 'Cruise Ferry',
+    duration: '5h 30m',
+    departure: '07:00 AM',
+    arrival: '12:30 PM',
+    price: generateRandomPrice(),
+    amenities: ['Restaurant', 'Duty-Free', 'Entertainment', 'Cabins'],
+    rating: 4.7,
+    image: '🛳️'
+  },
+  {
+    id: 6,
+    name: 'DFDS Seaways',
+    type: 'Ro-Pax Ferry',
+    duration: '6h 00m',
+    departure: '06:00 AM',
+    arrival: '12:00 PM',
+    price: generateRandomPrice(),
+    amenities: ['Vehicle Transport', 'Buffet', 'Cinema', 'Play Area'],
+    rating: 4.4,
+    image: '🚢'
+  },
+  {
+    id: 7,
+    name: 'Color Line',
+    type: 'Luxury Ferry',
+    duration: '4h 30m',
+    departure: '11:00 AM',
+    arrival: '03:30 PM',
+    price: generateRandomPrice(),
+    amenities: ['Fine Dining', 'Shopping', 'Lounge', 'Kids Zone'],
+    rating: 4.6,
+    image: '🛥️'
+  },
+  {
+    id: 8,
+    name: 'Superfast Ferries',
+    type: 'High-Speed Catamaran',
+    duration: '2h 00m',
+    departure: '08:30 AM',
+    arrival: '10:30 AM',
+    price: generateRandomPrice(),
+    amenities: ['WiFi', 'Business Class', 'Snack Bar'],
+    rating: 4.5,
+    image: '🚤'
+  },
+  {
+    id: 9,
+    name: 'Stena Line',
+    type: 'Ro-Ro Ferry',
+    duration: '7h 00m',
+    departure: '05:30 AM',
+    arrival: '12:30 PM',
+    price: generateRandomPrice(),
+    amenities: ['Truck Parking', 'Driver Lounge', 'Showers', 'Cafeteria'],
+    rating: 4.3,
+    image: '⛴'
+  },
+  {
+    id: 10,
+    name: 'Minoan Lines',
+    type: 'Passenger Ferry',
+    duration: '3h 45m',
+    departure: '10:00 AM',
+    arrival: '01:45 PM',
+    price: generateRandomPrice(),
+    amenities: ['A La Carte Restaurant', 'Bar', 'Outdoor Seating'],
+    rating: 4.4,
+    image: '⛴️'
+  },
+  {
+    id: 11,
+    name: 'Hellenic Seaways',
+    type: 'High-Speed Craft',
+    duration: '1h 30m',
+    departure: '07:45 AM',
+    arrival: '09:15 AM',
+    price: generateRandomPrice(),
+    amenities: ['WiFi', 'AC', 'Complimentary Water'],
+    rating: 4.2,
+    image: '⚡'
+  },
+  {
+    id: 12,
+    name: 'Grandi Navi Veloci',
+    type: 'Luxury Cruise Ferry',
+    duration: '8h 00m',
+    departure: '09:00 PM',
+    arrival: '05:00 AM',
+    price: generateRandomPrice(),
+    amenities: ['Cabins', 'Pool', 'Gym', 'Restaurants', 'Bars'],
+    rating: 4.8,
+    image: '🚢'
+  }
+]);
 
   const ferryClasses = [
     { id: 'economy', name: 'Silver Class', priceMultiplier: 1.0, features: ['Basic Seat', 'Water Bottle'] },

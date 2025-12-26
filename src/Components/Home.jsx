@@ -103,8 +103,8 @@ const Home = () => {
 
           {/* By Rinder */}
           <div className="brand-tag">
-            <span className="brand-by">By</span>
-            <span className="brand-name">BVF</span>
+          
+            <span className="brand-name">BOOK NOW</span>
           </div>
         </div>
 
