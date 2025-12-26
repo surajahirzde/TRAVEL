@@ -17,21 +17,21 @@ const Contact = () => {
     {
       icon: '📞',
       title: 'Call Us',
-      details: ['+91 99113 36188', '+91 1800 123 4567'],
+      details: ['+91 99113 36188', '+0129-2513672'],
       timing: 'Mon-Sat: 9:00 AM - 8:00 PM',
       color: '#3B82F6'
     },
     {
       icon: '📧',
       title: 'Email Us',
-      details: ['support@travelonweb.com', 'bookings@travelonweb.com'],
+      details: ['travelonweb.gmail.com'],
       timing: 'Response within 2 hours',
       color: '#10B981'
     },
     {
       icon: '🏢',
       title: 'Visit Us',
-      details: ['TravelFerry HQ, Gateway of India', 'Mumbai, Maharashtra - 400001'],
+      details: ['SCO-4, Second Floor, Dayal Bagh Market, Sector-39, Surajkund, Faridabad-121009 Haryana India'],
       timing: 'Mon-Fri: 10:00 AM - 6:00 PM',
       color: '#8B5CF6'
     },
@@ -75,7 +75,7 @@ const Contact = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value 
     }));
   };
 
@@ -88,7 +88,7 @@ const Contact = () => {
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({
-        name: '',
+        name: '', c1-00000072922071
         email: '',
         phone: '',
         subject: '',

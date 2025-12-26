@@ -106,6 +106,7 @@
 /* Contact Info Cards */
 .contact-info-section {
   margin-bottom: 80px;
+  margin-top: 5rem;
 }
 
 .contact-info-grid {
@@ -830,6 +831,7 @@
   }
   
   .section-title {
+    
     font-size: 28px;
   }
   

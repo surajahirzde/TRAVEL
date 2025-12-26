@@ -232,29 +232,7 @@
   margin-right: 10px;
 }
 
-/* Quick CTA Section */
-.quick-cta-section {
-  padding: 100px 20px;
-  background: linear-gradient(135deg, #0077b6, #0096c7);
-  color: white;
-  text-align: center;
-}
 
-.quick-cta-content h2 {
-  font-size: 2.5rem;
-  margin-bottom: 20px;
-}
-
-.quick-cta-content p {
-  font-size: 1.2rem;
-  margin-bottom: 40px;
-  opacity: 0.9;
-}
-
-.btn-large {
-  padding: 18px 50px;
-  font-size: 1.2rem;
-}
 
 /* Mobile Responsive */
 @media (max-width: 768px) {

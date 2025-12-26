@@ -35,8 +35,8 @@ const Navbar = () => {
           <Link to="/" className="navbar-logo-link">
             <div className="navbar-logo-icon">🚢</div>
             <div className="navbar-brand-text">
-              <span className="navbar-brand-primary">Travel</span>
-              <span className="navbar-brand-secondary">Ferry</span>
+              <span className="navbar-brand-primary">TravelOnWeb</span>
+              <span className="navbar-brand-secondary">BYF</span>
             </div>
           </Link>
         </div>
@@ -61,15 +61,11 @@ const Navbar = () => {
         {/* Merchant Profile Section */}
         <div className="navbar-profile-section">
           <div className="navbar-merchant-info">
-            <span className="navbar-merchant-label">LOGIN ID:</span>
-            <span className="navbar-merchant-id">YOUR NUMBER </span>
+            <span className="navbar-merchant-label">Welcome</span>
+            <span className="navbar-merchant-id">Sir / Madam </span>
           </div>
           
-          <button className="navbar-profile-button">
-            <div className="navbar-profile-avatar">
-              <span className="navbar-avatar-initials">MF</span>
-            </div>
-          </button>
+       
 
           {/* Mobile Menu Button */}
           <button 
@@ -85,32 +81,6 @@ const Navbar = () => {
           </button>
         </div>
 
-      </div>
-
-      {/* Mobile Menu */}
-      <div className={`navbar-mobile-menu ${isMenuOpen ? 'open' : ''}`}>
-        <div className="navbar-mobile-menu-header">
-          <div className="navbar-mobile-profile">
-            <div className="navbar-mobile-avatar">MF</div>
-            <div className="navbar-mobile-profile-info">
-              <span className="navbar-mobile-merchant">Merchant ID: MF789456123</span>
-            </div>
-          </div>
-        </div>
-        
-        <ul className="navbar-mobile-links">
-          {navLinks.map((link) => (
-            <li key={link.name} className="navbar-mobile-link-item">
-              <Link 
-                to={link.path} 
-                className="navbar-mobile-link"
-                onClick={toggleMenu}
-              >
-                {link.name}
-              </Link>
-            </li>
-          ))}
-        </ul>
       </div>
     </header>
   );

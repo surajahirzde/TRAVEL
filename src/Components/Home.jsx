@@ -104,7 +104,7 @@ const Home = () => {
           {/* By Rinder */}
           <div className="brand-tag">
             <span className="brand-by">By</span>
-            <span className="brand-name">Ferry</span>
+            <span className="brand-name">BVF</span>
           </div>
         </div>
 
@@ -184,16 +184,8 @@ const Home = () => {
         </div>
       </section>
 
-      {/* Quick Contact/Booking CTA */}
-      <section className="quick-cta-section">
-        <div className="quick-cta-content">
-          <h2>Ready to Sail?</h2>
-          <p>Book now for the best sea travel experience</p>
-          <button className="btn-primary btn-large" onClick={handleBooking}>
-            Book Your Journey
-          </button>
-        </div>
-      </section>
+  
+
 
     </div>
   );
