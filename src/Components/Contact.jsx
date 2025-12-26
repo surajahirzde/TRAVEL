@@ -88,7 +88,7 @@ const Contact = () => {
       setIsSubmitting(false);
       setSubmitStatus('success');
       setFormData({
-        name: '', c1-00000072922071
+        name: '', 
         email: '',
         phone: '',
         subject: '',
