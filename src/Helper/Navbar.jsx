@@ -62,7 +62,7 @@ const Navbar = () => {
         <div className="navbar-profile-section">
           <div className="navbar-merchant-info">
             <span className="navbar-merchant-label">Welcome</span>
-            <span className="navbar-merchant-id">Sir / Madam </span>
+            <span className="navbar-merchant-id">Sir / mam </span>
           </div>
           
        
